@@ -1,34 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Cypher.Properties;
 
-namespace Cypher
-{
-	class Program
-	{
-		static void Main(string[] args)
-		{
-			Console.WriteLine("\t\tBorne Cypher, v0.1" + Environment.NewLine);
-			Console.WriteLine("Please enter a string to encrypt:");
+namespace Cypher {
+    internal class Program {
+        private static string[] _threeLetters;
+        private static readonly Random Rand = new Random();
 
-			string input = Console.ReadLine();
+        private static void Main() {
+            Console.WriteLine("\t\tBorne Cypher, v0.1" + Environment.NewLine);
+            Console.WriteLine("Please enter a string to encrypt:");
 
-			input = CypherText(input);
+            var input = Console.ReadLine();
 
-			Console.WriteLine(string.Format("Full Cypher: \"{0}\".", input));
+            input = CypherText(input);
 
-			string reconstruct = CypherText(input);
+            Console.WriteLine($"Full Cypher: \"{input}\".");
 
-			Console.WriteLine(string.Format("Decyphered: \"{0}\"", reconstruct));
+            var reconstruct = CypherText(input);
 
-			Console.ReadLine();
-		}
+            Console.WriteLine($"Decyphered: \"{reconstruct}\"");
 
-		private static string CypherText(string p)
-		{
-			PadString(ref p);
+            Console.ReadLine();
+        }
+
+        private static string CypherText(string p) {
+            PadString(ref p);
 
 #if DEBUG
 
@@ -37,102 +35,85 @@ namespace Cypher
 
 #endif
 
-			List<string> Hextets = new List<string>();
-			List<string> DecypheredHextets = new List<string>();
-			StringBuilder b = new StringBuilder(p);
+            var hextets = new List<string>();
+            var decypheredHextets = new List<string>();
+            var b = new StringBuilder(p);
 
-			while (b.Length > 0)
-			{
-				string hex;
+            while (b.Length > 0) {
+                var hex = b.ToString().Substring(0, 16);
 
-				hex = b.ToString().Substring(0, 16);
+                b.Remove(0, 16);
 
-				b.Remove(0, 16);
+                hextets.Add(hex);
+            }
 
-				Hextets.Add(hex);
-			}
-
-			for (int i = 0; i < Hextets.Count; i++)
-			{
+            foreach (var t in hextets) {
 #if DEBUG
 				Console.WriteLine(string.Format("Hextet {0}: \"{1}\"", i + 1, Hextets[i]));
 #endif
-				string cyphered = string.Empty;
+                var cyphered = string.Empty;
 
-				for (int j = 0; j < 4; j++)
-				{
-					for (int k = j; k < Hextets[i].Length; k += 4)
-					{
-						cyphered += Hextets[i][k];
-					}
-				}
+                for (var j = 0; j < 4; j++)
+                for (var k = j; k < t.Length; k += 4)
+                    cyphered += t[k];
 
-				DecypheredHextets.Add(cyphered);
+                decypheredHextets.Add(cyphered);
 #if DEBUG
 				Console.WriteLine(string.Format("\tCyphered: \"{0}\"", cyphered));
 #endif
-			}
+            }
 
-			b.Clear();
+            b.Clear();
 
-			foreach (string str in DecypheredHextets)
-			{
-				b.Append(str);
-			}
+            foreach (var str in decypheredHextets)
+                b.Append(str);
 
 
-			return b.ToString();
-		}
+            return b.ToString();
+        }
 
-		private static void PadString(ref string input)
-		{
-			int paddingNeeded = input.Length % 16;
-			if (paddingNeeded != 0)
-				paddingNeeded = 16 - paddingNeeded;
+        private static void PadString(ref string input) {
+            var paddingNeeded = input.Length % 16;
+            if (paddingNeeded != 0)
+                paddingNeeded = 16 - paddingNeeded;
 
-			StringBuilder b = new StringBuilder(input);
+            var b = new StringBuilder(input);
 
-			while (paddingNeeded > 0)
-			{
+            while (paddingNeeded > 0) {
+                switch (paddingNeeded) {
+                    case 1:
+                        b.Append('.');
+                        break;
 
-				switch (paddingNeeded)
-				{
-					case 1:
-						b.Append('.');
-						break;
+                    case 2:
+                        b.Append("..");
+                        break;
 
-					case 2:
-						b.Append("..");
-						break;
+                    case 3:
+                        b.Append("...");
+                        break;
 
-					case 3:
-						b.Append("...");
-						break;
+                    default:
+                        AddThreeLetterWord(b);
+                        break;
+                }
 
-					default:
-						AddThreeLetterWord(b);
-						break;
-				}
+                paddingNeeded = b.Length % 16;
+                if (paddingNeeded != 0)
+                    paddingNeeded = 16 - paddingNeeded;
+            }
 
-				paddingNeeded = b.Length % 16;
-				if (paddingNeeded != 0)
-					paddingNeeded = 16 - paddingNeeded;
-			}
+            input = b.ToString();
+        }
 
-			input = b.ToString();
-		}
+        private static void AddThreeLetterWord(StringBuilder b) {
+            if (_threeLetters == null)
+                _threeLetters = Resources.threeletters.Split(new[] {Environment.NewLine},
+                    StringSplitOptions.RemoveEmptyEntries);
 
-		private static string[] threeLetters;
-		private static Random r = new Random();
+            var add = _threeLetters[Rand.Next(0, _threeLetters.Length - 1)].ToLower();
 
-		private static void AddThreeLetterWord(StringBuilder b)
-		{
-			if (threeLetters == null)
-				threeLetters = Cypher.Properties.Resources.threeletters.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-
-			string add = threeLetters[r.Next(0, threeLetters.Length - 1)].ToLower();
-
-			b.Append(" " + add);
-		}
-	}
+            b.Append(" " + add);
+        }
+    }
 }
